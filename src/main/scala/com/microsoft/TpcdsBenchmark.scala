@@ -3,19 +3,26 @@ package com.microsoft
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.SQLContext
 
+/**
+ * Usage: TpcdsBenchmark [dataDir] [result]
+ */
 object TpcdsBenchmark {
   def main(args: Array[String]) {
+    if (args.length < 2) {
+      printUsage()
+      System.exit(1)
+    }
+
     val spark = SparkSession
       .builder
       .appName("TPC-DS Benchmark")
-      .config("spark.master", "local")
+      .master("local")
       .getOrCreate()
 
-    // Set:
-    val rootDir = "/mnt/d/tpcds" // root directory of location to create data in.
+    val dataDir = args(0)
+    val resultDir = args(1)
     val databaseName = "tpcds" // name of database to create.
     val scaleFactor = "1" // scaleFactor defines the size of the dataset to generate (in GB).
-    val format = "parquet" // valid spark format like parquet "parquet".
     val sqlContext = new SQLContext(spark.sparkContext)
     // Run:
     val tables = new TPCDSTables(sqlContext,
@@ -25,7 +32,7 @@ object TpcdsBenchmark {
       useStringForDate = false) // true to replace DateType with StringType
 
 //    tables.genData(
-//      location = rootDir,
+//      location = dataDir,
 //      format = format,
 //      overwrite = true, // overwrite the data that is already there
 //      partitionTables = true, // create the partitioned fact tables
@@ -38,7 +45,7 @@ object TpcdsBenchmark {
     sqlContext.sql(s"create database $databaseName")
     // Create metastore tables in a specified database for your data.
     // Once tables are created, the current database will be switched to the specified database.
-    tables.createExternalTables(rootDir, "parquet", databaseName, overwrite = true, discoverPartitions = true)
+    tables.createExternalTables(dataDir, "parquet", databaseName, overwrite = true, discoverPartitions = true)
     // Or, if you want to create temporary tables
     // tables.createTemporaryTables(location, format)
 
@@ -46,9 +53,7 @@ object TpcdsBenchmark {
     tables.analyzeTables(databaseName, analyzeColumns = true)
 
     val tpcds = new TPCDS (sqlContext = sqlContext)
-    // Set:
 
-    val resultLocation = "/mnt/e" // place to write results
     val iterations = 1 // how many iterations of queries to run.
     val queries = tpcds.tpcds2_4Queries // queries to run.
     val timeout = 24*60*60 // timeout, in seconds.
@@ -58,8 +63,17 @@ object TpcdsBenchmark {
     val experiment = tpcds.runExperiment(
       queries,
       iterations = iterations,
-      resultLocation = resultLocation,
+      resultLocation = resultDir,
       forkThread = true)
     experiment.waitForFinish(timeout)
+  }
+
+  private def printUsage(): Unit = {
+    val usage = """ TpcdsBenchmark
+                  |Usage: dataDir resultDir
+                  |dataDir - (string) Directory contains tpcds dataset in parquet format
+                  |resultDir - (string) Directory for writing benchmark result"""
+
+    println(usage)
   }
 }
