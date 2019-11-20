@@ -16,7 +16,6 @@ object TpcdsBenchmark {
     val spark = SparkSession
       .builder
       .appName("TPC-DS Benchmark")
-      .master("local")
       .getOrCreate()
 
     val dataDir = args(0)
