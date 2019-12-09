@@ -15,10 +15,6 @@ object TpcdsDataGen {
     val spark = SparkSession
       .builder
       .appName("TPC-DS Benchmark")
-      .master("local[1]")
-      .config("executor-cores", "2")
-      .config("executor-memory", "10G")
-      .config("spark.executor.memoryOverhead", "2G")
       .getOrCreate()
 
     val dataDir = args(0)

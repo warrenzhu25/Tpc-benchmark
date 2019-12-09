@@ -24,10 +24,10 @@ class DSDGEN(dsdgenDir: String) extends DataGenerator {
   def generate(sparkContext: SparkContext, name: String, partitions: Int, scaleFactor: String) = {
     val generatedData = {
       sparkContext.parallelize(1 to partitions, partitions).flatMap { i =>
-        val commands = Seq("C:\\Program Files\\Java\\jdk1.8.0_221\\bin\\java",
+        val commands = Seq("D:\\data\\java.latest\\bin\\java",
            "-Xmx1024m",
            "-jar",
-           "D:\\tpcds-1.3.jar",
+           "tpcds-1.3.jar",
            "--filter",
            "-s", scaleFactor,
            "-t", name,
