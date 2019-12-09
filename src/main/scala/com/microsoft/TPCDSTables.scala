@@ -20,24 +20,19 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 
 class DSDGEN(dsdgenDir: String) extends DataGenerator {
-  val dsdgen = s"$dsdgenDir/dsdgen"
 
   def generate(sparkContext: SparkContext, name: String, partitions: Int, scaleFactor: String) = {
     val generatedData = {
       sparkContext.parallelize(1 to partitions, partitions).flatMap { i =>
-        val localToolsDir = if (new java.io.File(dsdgen).exists) {
-          dsdgenDir
-        } else if (new java.io.File(s"/$dsdgen").exists) {
-          s"/$dsdgenDir"
-        } else {
-          sys.error(s"Could not find dsdgen at $dsdgen or /$dsdgen. Run install")
-        }
-
-        // Note: RNGSEED is the RNG seed used by the data generator. Right now, it is fixed to 100.
-        val parallel = if (partitions > 1) s"-parallel $partitions -child $i" else ""
-        val commands = Seq(
-          "bash", "-c",
-          s"cd $localToolsDir && ./dsdgen -table $name -filter Y -scale $scaleFactor -RNGSEED 100 $parallel")
+        val commands = Seq("C:\\Program Files\\Java\\jdk1.8.0_221\\bin\\java",
+           "-Xmx1024m",
+           "-jar",
+           "D:\\tpcds-1.3.jar",
+           "--filter",
+           "-s", scaleFactor,
+           "-t", name,
+           "-p", partitions.toString,
+           "-c", i.toString)
         println(commands)
         BlockingLineStream(commands)
       }
