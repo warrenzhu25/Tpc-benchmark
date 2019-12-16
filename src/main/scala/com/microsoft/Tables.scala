@@ -176,7 +176,8 @@ abstract class Tables(sqlContext: SQLContext, scaleFactor: String,
       numPartitions: Int): Unit = {
       val mode = if (overwrite) SaveMode.Overwrite else SaveMode.Ignore
 
-      val data = df(format != "text", numPartitions)
+      val partitions = if (partitionColumns.isEmpty) 20 else numPartitions
+      val data = df(format != "text", partitions)
       val tempTableName = s"${name}_text"
       data.createOrReplaceTempView(tempTableName)
 
