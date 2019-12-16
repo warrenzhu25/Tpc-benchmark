@@ -25,20 +25,9 @@ object TpcdsBenchmark {
     val sqlContext = new SQLContext(spark.sparkContext)
     // Run:
     val tables = new TPCDSTables(sqlContext,
-      dsdgenDir = "/mnt/d", // location of dsdgen
       scaleFactor = scaleFactor,
       useDoubleForDecimal = false, // true to replace DecimalType with DoubleType
       useStringForDate = false) // true to replace DateType with StringType
-
-//    tables.genData(
-//      location = dataDir,
-//      format = format,
-//      overwrite = true, // overwrite the data that is already there
-//      partitionTables = true, // create the partitioned fact tables
-//      clusterByPartitionColumns = true, // shuffle to get partitions coalesced into single files.
-//      filterOutNullPartitionValues = false, // true to filter out the partition with NULL key value
-//      tableFilter = "", // "" means generate all tables
-//      numPartitions = 100) // how many dsdgen partitions to run - number of input tasks.
 
     // Create the specified database
     sqlContext.sql(s"create database $databaseName")

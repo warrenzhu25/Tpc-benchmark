@@ -25,7 +25,6 @@ object TpcdsDataGen {
     val sqlContext = new SQLContext(spark.sparkContext)
     // Run:
     val tables = new TPCDSTables(sqlContext,
-      dsdgenDir = "/mnt/d", // location of dsdgen
       scaleFactor = scaleFactor,
       useDoubleForDecimal = false, // true to replace DecimalType with DoubleType
       useStringForDate = false) // true to replace DateType with StringType

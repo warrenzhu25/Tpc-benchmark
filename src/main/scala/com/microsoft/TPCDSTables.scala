@@ -19,15 +19,19 @@ package com.microsoft
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 
-class DSDGEN(dsdgenDir: String) extends DataGenerator {
+class DSDGEN(javaDir: String, dsdgenDir: String) extends DataGenerator {
 
   def generate(sparkContext: SparkContext, name: String, partitions: Int, scaleFactor: String) = {
     val generatedData = {
       sparkContext.parallelize(1 to partitions, partitions).flatMap { i =>
-        val commands = Seq("D:\\data\\java.latest\\bin\\java",
+        val javaHome = getJavaHome()
+        //TODO: This only supports on windows
+        val javaPath = s"""$javaHome\bin\java"""
+
+        val commands = Seq(javaPath,
            "-Xmx1024m",
            "-jar",
-           "tpcds-1.3.jar",
+           dsdgenDir,
            "--filter",
            "-s", scaleFactor,
            "-t", name,
@@ -41,18 +45,32 @@ class DSDGEN(dsdgenDir: String) extends DataGenerator {
     generatedData.setName(s"$name, sf=$scaleFactor, strings")
     generatedData
   }
+
+  def getJavaHome(): String = {
+    if(!javaDir.isEmpty && new java.io.File(javaDir).exists) {
+      javaDir
+    } else {
+      val javaHome = sys.env.get("JAVA_HOME")
+      if(javaHome.isDefined) {
+        javaHome.get
+      } else {
+        sys.error(s"Could not find JAVA_HOME and javaHomeDir")
+      }
+    }
+  }
 }
 
 class TPCDSTables(
   sqlContext: SQLContext,
-  dsdgenDir: String,
   scaleFactor: String,
+  javaDir: String = "",
+  dsdgenDir: String = "tpcds.jar",
   useDoubleForDecimal: Boolean = false,
   useStringForDate: Boolean = false)
   extends Tables(sqlContext, scaleFactor, useDoubleForDecimal, useStringForDate) {
   import sqlContext.implicits._
 
-  val dataGenerator = new DSDGEN(dsdgenDir)
+  val dataGenerator = new DSDGEN(javaDir, dsdgenDir)
   val tables = Seq(
     Table("catalog_sales",
       partitionColumns = "cs_sold_date_sk" :: Nil,
