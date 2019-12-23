@@ -4,7 +4,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.SQLContext
 
 /**
- * Usage: TpcdsBenchmark [dataDir] [result]
+ * Usage: TpcdsBenchmark [dataDir] [result] [queries] [iterations]
  */
 object TpcdsBenchmark {
   def main(args: Array[String]) {
@@ -20,37 +20,39 @@ object TpcdsBenchmark {
 
     val dataDir = args(0)
     val resultDir = args(1)
-    val databaseName = "tpcds" // name of database to create.
-    val scaleFactor = "1" // scaleFactor defines the size of the dataset to generate (in GB).
+    val queries = if(args.length > 2) args(2) else ""
+    val iterations = if(args.length > 3) args(3) else "1"
     val sqlContext = new SQLContext(spark.sparkContext)
     // Run:
     val tables = new TPCDSTables(sqlContext,
-      scaleFactor = scaleFactor,
+      scaleFactor = "1",
       useDoubleForDecimal = false, // true to replace DecimalType with DoubleType
       useStringForDate = false) // true to replace DateType with StringType
 
     // Create the specified database
-    sqlContext.sql(s"create database $databaseName")
+    // sqlContext.sql(s"create database $databaseName")
     // Create metastore tables in a specified database for your data.
     // Once tables are created, the current database will be switched to the specified database.
-    tables.createExternalTables(dataDir, "parquet", databaseName, overwrite = true, discoverPartitions = true)
-    // Or, if you want to create temporary tables
-    // tables.createTemporaryTables(location, format)
+    //tables.createExternalTables(dataDir, "parquet", databaseName, overwrite = true, discoverPartitions = true)
+    // Create temporary tables to avoid concurrent benchmark run affecting each other
+    tables.createTemporaryTables(dataDir, "parquet")
 
     // For CBO only, gather statistics on all columns:
-    tables.analyzeTables(databaseName, analyzeColumns = true)
+    // tables.analyzeTables(databaseName, analyzeColumns = true)
 
     val tpcds = new TPCDS (sqlContext = sqlContext)
 
-    val iterations = 1 // how many iterations of queries to run.
-    val queries = tpcds.tpcds2_4Queries // queries to run.
-    val timeout = 24*60*60 // timeout, in seconds.
-    // Run:
-    sqlContext.sql(s"use $databaseName")
+    val queriesToRun = if(queries.isEmpty || queries == "all") {
+      tpcds.tpcds2_4Queries
+    } else {
+      val queryNames = queries.split(",").toSet
+      tpcds.tpcds2_4QueriesMap.filterKeys(queryNames.contains).values.toSeq
+    } // queries to run.
+    val timeout = 48*60*60 // timeout, in seconds.
 
     val experiment = tpcds.runExperiment(
-      queries,
-      iterations = iterations,
+      queriesToRun,
+      iterations = iterations.toInt,
       resultLocation = resultDir,
       forkThread = true)
     experiment.waitForFinish(timeout)
@@ -60,7 +62,9 @@ object TpcdsBenchmark {
     val usage = """ TpcdsBenchmark
                   |Usage: dataDir resultDir
                   |dataDir - (string) Directory contains tpcds dataset in parquet format
-                  |resultDir - (string) Directory for writing benchmark result"""
+                  |resultDir - (string) Directory for writing benchmark result
+                  |queries - (string) Queries to run separated by comma, such as 'q4,q5'. Default all
+                  |iterations - (int) The number of iterations for each query. Default 1"""
 
     println(usage)
   }
