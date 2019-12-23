@@ -42,10 +42,10 @@ object TpcdsDataGen {
 
   private def printUsage(): Unit = {
     val usage = """ TpcdsDataGen
-                  |Usage: dataDir scaleFactor partitions
-                  |dataDir - (string) Directory contains tpcds dataset in parquet format
-                  |scaleFactor - (int) Volume of data to generate in GB
-                  |partitions - (int) parallelism on datagen and number of writers
+                  |Usage: dataDir scaleFactor partitions table overwrite
+                  |dataDir - (string) Directory to put tpcds dataset in parquet format. Required
+                  |scaleFactor - (int) Volume of data to generate in GB. Required.
+                  |partitions - (int) parallelism on datagen and number of writers. Default same as scaleFactor
                   |table - (string) Table to generate. Default all
                   |overwrite - (bool) Overwrite if existed. Default false """
 
