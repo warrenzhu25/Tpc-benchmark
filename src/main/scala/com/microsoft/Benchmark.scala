@@ -363,7 +363,7 @@ object Benchmark {
         }
 
       // Run the benchmarks!
-      val results: Seq[ExperimentRun] = (1 to iterations).flatMap { i =>
+      (1 to iterations).flatMap { i =>
         combinations.map { setup =>
           val currentOptions = variations.asInstanceOf[Seq[Variation[Any]]].zip(setup).map {
             case (v, idx) =>
@@ -421,14 +421,17 @@ object Benchmark {
 
           currentRuns += result
 
-          result
+          writeResult(sqlContext.createDataFrame(Seq(result)))
         }
       }
 
+      logCollection()
+    }
+
+    def writeResult(resultDataFrame: DataFrame): Unit = {
       try {
-        val resultsTable = sqlContext.createDataFrame(results)
         logMessage(s"Results written to table: 'sqlPerformance' at $resultPath")
-        resultsTable
+        resultDataFrame
           .coalesce(1)
           .write
           .format("json")
@@ -438,8 +441,6 @@ object Benchmark {
           logMessage(s"Failed to write data: $e")
           throw e
       }
-
-      logCollection()
     }
 
     def scheduleCpuCollection(fs: FS) = {
