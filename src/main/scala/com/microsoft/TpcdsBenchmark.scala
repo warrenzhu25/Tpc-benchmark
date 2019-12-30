@@ -16,6 +16,7 @@ object TpcdsBenchmark {
     val spark = SparkSession
       .builder
       .appName("TPC-DS Benchmark")
+      .enableHiveSupport()
       .getOrCreate()
 
     val dataDir = args(0)
