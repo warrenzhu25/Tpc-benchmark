@@ -26,7 +26,7 @@ class DSDGEN(javaDir: String, dsdgenDir: String) extends DataGenerator {
       sparkContext.parallelize(1 to partitions, partitions).flatMap { i =>
         val javaHome = getJavaHome()
         //TODO: This only supports on windows
-        val javaPath = s"""$javaHome\bin\java"""
+        val javaPath = s"""$javaHome\\bin\\java"""
 
         val commands = Seq(javaPath,
            "-Xmx1024m",
@@ -51,6 +51,7 @@ class DSDGEN(javaDir: String, dsdgenDir: String) extends DataGenerator {
       javaDir
     } else {
       val javaHome = sys.env.get("JAVA_HOME")
+      println(s"JAVA_HOME is $javaHome")
       if(javaHome.isDefined) {
         javaHome.get
       } else {

@@ -16,14 +16,13 @@ object TpcdsBenchmark {
     val spark = SparkSession
       .builder
       .appName("TPC-DS Benchmark")
-      .enableHiveSupport()
       .getOrCreate()
 
     val dataDir = args(0)
     val resultDir = args(1)
-    val databaseName = if(args.length > 2) args(2) else "tpcds"
-    val queries = if(args.length > 3) args(3) else ""
-    val iterations = if(args.length > 4) args(4) else "1"
+    val databaseName = if (args.length > 2) args(2) else "tpcds"
+    val queries = if (args.length > 3) args(3) else ""
+    val iterations = if (args.length > 4) args(4) else "1"
     val sqlContext = new SQLContext(spark.sparkContext)
 
     // Run:
@@ -32,30 +31,26 @@ object TpcdsBenchmark {
       useDoubleForDecimal = false, // true to replace DecimalType with DoubleType
       useStringForDate = false) // true to replace DateType with StringType
 
-    if(!spark.catalog.databaseExists(databaseName)) {
-      // Create the specified database
-      sqlContext.sql(s"create database $databaseName")
-      // Create metastore tables in a specified database for your data.
-      // Once tables are created, the current database will be switched to the specified database.
-      tables.createExternalTables(dataDir, "parquet", databaseName, overwrite = true, discoverPartitions = true)
-      // Create temporary tables to avoid concurrent benchmark run affecting each other
-      // tables.createTemporaryTables(dataDir, "parquet")
+    println(s"Cost base optimization is enabled. Create external table")
+    // Create the specified database
+    sqlContext.sql(s"create database $databaseName")
+    // Create metastore tables in a specified database for your data.
+    // Once tables are created, the current database will be switched to the specified database.
+    tables.createExternalTables(dataDir, "parquet", databaseName, overwrite = true, discoverPartitions = true)
+    // Create temporary tables to avoid concurrent benchmark run affecting each other
+    // tables.createTemporaryTables(dataDir, "parquet")
 
-      // For CBO only, gather statistics on all columns:
-      tables.analyzeTables(databaseName, analyzeColumns = true)
-    } else {
-      println(s"Database $databaseName already existed")
-    }
+    // For CBO only, gather statistics on all columns:
+    tables.analyzeTables(databaseName, analyzeColumns = true)
+    val tpcds = new TPCDS(sqlContext = sqlContext)
 
-    val tpcds = new TPCDS (sqlContext = sqlContext)
-
-    val queriesToRun = if(queries.isEmpty || queries == "all") {
+    val queriesToRun = if (queries.isEmpty || queries == "all") {
       tpcds.tpcds2_4Queries
     } else {
       val queryNames = queries.split(",").toSet
       tpcds.tpcds2_4QueriesMap.filterKeys(queryNames.contains).values.toSeq
     } // queries to run.
-    val timeout = 48*60*60 // timeout, in seconds.
+    val timeout = 48 * 60 * 60 // timeout, in seconds.
 
     val experiment = tpcds.runExperiment(
       queriesToRun,
