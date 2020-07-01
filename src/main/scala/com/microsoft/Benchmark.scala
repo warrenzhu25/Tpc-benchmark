@@ -333,7 +333,7 @@ object Benchmark {
         .flatMap { query =>
           try {
             query.newDataFrame().queryExecution.logical.collect {
-              case UnresolvedRelation(t) => t.table
+              case UnresolvedRelation(t) => t.toString()
             }
           } catch {
             // ignore the queries that can't be parsed
