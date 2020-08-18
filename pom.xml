@@ -46,6 +46,12 @@
             <version>6.45.0</version>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.rogach</groupId>
+            <artifactId>scallop_${scala.binary.version}</artifactId>
+            <version>3.4.0</version>
+        </dependency>
     </dependencies>
 
     <build>
