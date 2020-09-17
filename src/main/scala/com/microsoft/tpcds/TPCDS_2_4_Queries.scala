@@ -20,6 +20,8 @@ import com.microsoft.Benchmark
 import com.microsoft.ExecutionMode.CollectResults
 import org.apache.commons.io.IOUtils
 
+import scala.collection.immutable.TreeMap
+
 /**
  * This implements the official TPCDS v2.4 queries with only cosmetic modifications.
  */
@@ -42,9 +44,7 @@ trait Tpcds_2_4_Queries extends Benchmark {
   val tpcds2_4Queries = queryNames.map { queryName =>
     val queryContent: String = IOUtils.toString(
       getClass().getClassLoader().getResourceAsStream(s"tpcds_2_4/$queryName.sql"))
-    Query(queryName + "-v2.4", queryContent, description = "TPCDS 2.4 Query",
+    Query(queryName, queryContent, description = "TPCDS 2.4 Query",
       executionMode = CollectResults)
   }
-
-  val tpcds2_4QueriesMap = tpcds2_4Queries.map(q => q.name.split("-").get(0) -> q).toMap
 }

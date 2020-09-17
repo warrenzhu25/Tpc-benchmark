@@ -16,7 +16,7 @@ object TpcdsBenchmark {
 
     val dataDir = appConf.dataDir()
     val resultDir = appConf.resultDir()
-    val databaseName = appConf.databaseName()
+    val databaseName = "tpcds"
     val queries = appConf.queries()
     val iterations = appConf.iterations()
 
@@ -26,26 +26,16 @@ object TpcdsBenchmark {
     val spark = SparkSession
       .builder
       .appName("TPC-DS Benchmark")
-      .master("local")
-      .config("spark.driver.bindAddress", "localhost")
-      .config("spark.sql.adaptive.enabled", "true")
-      .config("spark.sql.adaptive.forceApply", "true")
       .getOrCreate()
 
     val sqlContext = new SQLContext(spark.sparkContext)
 
     val tpcds = new TPCDS(sqlContext = sqlContext)
-    val excludes = queries.split(",").toSet
-    val queryMaps = if (queries.isEmpty) {
-      tpcds.tpcds2_4QueriesMap.filterKeys(k => !excludes.contains(k))
-    } else {
-      val queryNames = queries.split(",").toSet
-      tpcds.tpcds2_4QueriesMap.filterKeys(queryNames.contains)
-    }
+    val excludes = appConf.exclude().split(",").toSet
+    val queriesToRun = tpcds.tpcds2_4Queries.filter(q => !excludes.contains(q.name))
 
-    println(s"Queries to Run: ${queryMaps.keys.mkString(",")}")
+    println(s"Queries to Run: ${queriesToRun.map(q => q.name).mkString(",")}")
 
-    val queriesToRun = queryMaps.values.toSeq
     // Run:
     val tables = new TPCDSTables(sqlContext,
       scaleFactor = "1",
