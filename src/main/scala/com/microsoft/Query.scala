@@ -104,7 +104,7 @@ class Query(
 
             BreakdownResult(
               node.nodeName,
-              node.simpleString(100).replaceAll("#\\d+", ""),
+              node.simpleString.replaceAll("#\\d+", ""),
               index,
               childIndexes,
               executionTime,
