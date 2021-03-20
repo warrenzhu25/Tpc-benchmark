@@ -3,16 +3,20 @@ package com.microsoft
 import org.apache.spark.sql.{SQLContext, SparkSession}
 
 /**
- * Usage: TpcdsBenchmark [dataDir] [result] [databaseName] [queries] [iterations]
+ * Usage:
+ *
+ * -c, --cbo                 Enable cbo
+ * -d, --data-dir  <arg>     Directory contains tpcds dataset in parquet format
+ * -e, --exclude  <arg>      Exclude query separated by comma. Example: q1,q5
+ * -i, --iterations  <arg>   The number of iterations for each query
+ * -q, --queries  <arg>      Queries to run separated by comma, such as 'q4,q5'
+ * -r, --result-dir  <arg>   Directory for writing benchmark result
+ * -h, --help                Show help message
  */
 object TpcdsBenchmark {
   def main(args: Array[String]) {
-    if (args.length < 2) {
-      printUsage()
-      System.exit(1)
-    }
-
     val appConf = new AppConf(args)
+    appConf.printHelp()
 
     val dataDir = appConf.dataDir()
     val resultDir = appConf.resultDir()
@@ -21,7 +25,6 @@ object TpcdsBenchmark {
     val iterations = appConf.iterations()
 
     println(s"AppConf are ${appConf.summary}")
-    appConf.printHelp()
 
     val spark = SparkSession
       .builder
@@ -62,17 +65,5 @@ object TpcdsBenchmark {
       resultLocation = resultDir,
       forkThread = true)
     experiment.waitForFinish(timeout)
-  }
-
-  private def printUsage(): Unit = {
-    val usage = """ TpcdsBenchmark
-                  |Usage: dataDir resultDir
-                  |dataDir - (string) Directory contains tpcds dataset in parquet format
-                  |resultDir - (string) Directory for writing benchmark result
-                  |databaseName - (string) database name
-                  |queries - (string) Queries to run separated by comma, such as 'q4,q5'. Default all
-                  |iterations - (int) The number of iterations for each query. Default 1"""
-
-    println(usage)
   }
 }

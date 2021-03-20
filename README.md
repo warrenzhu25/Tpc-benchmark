@@ -40,7 +40,7 @@ spark-submit.cmd
 --executor-memory 10G 
 --conf spark.executor.memoryOverhead=6G 
 --files "hdfs://tpcds-1.3.jar"
-tpcds-benchmark-1.0-SNAPSHOT.jar 
+tpcds-benchmark_2.12-1.1-SNAPSHOT.jar 
 hdfs://project/spark/tpcds 100000 100000 store_sales true
 
 ```
@@ -49,9 +49,14 @@ hdfs://project/spark/tpcds 100000 100000 store_sales true
 
 ```
 TpcdsBenchmark
-Usage: dataDir resultDir
-dataDir - (string) Directory contains tpcds dataset in parquet format
-resultDir - (string) Directory for writing benchmark result
+Usage:
+  -c, --cbo                 Enable cbo
+  -d, --data-dir  <arg>     Directory contains tpcds dataset in parquet format
+  -e, --exclude  <arg>      Exclude query separated by comma. Example: q1,q5
+  -i, --iterations  <arg>   The number of iterations for each query
+  -q, --queries  <arg>      Queries to run separated by comma, such as 'q4,q5'
+  -r, --result-dir  <arg>   Directory for writing benchmark result
+  -h, --help                Show help message
 ```
 
 Sample command
@@ -67,9 +72,9 @@ spark-submit.cmd
 --executor-cores 2 
 --executor-memory 10G 
 --conf spark.executor.memoryOverhead=6G
-tpcds-benchmark-1.0-SNAPSHOT.jar 
-hdfs://project/spark/tpcds 
-hdfs://tpcds/result
+tpcds-benchmark_2.12-1.1-SNAPSHOT.jar.jar 
+-d hdfs://project/spark/tpcds
+-r hdfs://tpcds/result
 ```
 
 
