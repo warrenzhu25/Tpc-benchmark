@@ -28,7 +28,6 @@ object TpchBenchmark {
 
     val spark = SparkSession
       .builder
-      .appName("TPC-DS Benchmark")
       .getOrCreate()
 
     val sqlContext = new SQLContext(spark.sparkContext)
