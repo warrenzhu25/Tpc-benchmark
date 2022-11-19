@@ -34,7 +34,11 @@ object TpchBenchmark {
 
     val tpch = new TPCH(sqlContext = sqlContext)
     val excludes = appConf.exclude().split(",").toSet
-    val queriesToRun = tpch.queries.filter(q => !excludes.contains(q.name))
+    val includes = queries.split(",").toSet
+    val queriesToRun =
+      tpch.queries
+        .filter(q => queries.isEmpty || includes.contains(q.name))
+        .filter(q => !excludes.contains(q.name))
 
     println(s"Queries to Run: ${queriesToRun.map(q => q.name).mkString(",")}")
 

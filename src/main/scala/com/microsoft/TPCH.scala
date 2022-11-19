@@ -168,7 +168,7 @@ class TPCH(@transient sqlContext: SQLContext)
   val queries = (1 to 22).map { q =>
     val queryContent: String = IOUtils.toString(
       getClass().getClassLoader().getResourceAsStream(s"tpch/queries/$q.sql"))
-    Query(s"Q$q", queryContent, description = "TPCH Query",
+    Query(s"q$q", queryContent, description = "TPCH Query",
       executionMode = CollectResults)
   }
   val queriesMap = queries.map(q => q.name.split("-").get(0) -> q).toMap
