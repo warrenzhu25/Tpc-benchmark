@@ -104,10 +104,11 @@ abstract class Benchmark(
       tags: Map[String, String] = Map.empty,
       timeout: Long = 0L,
       resultLocation: String = resultsLocation,
-      forkThread: Boolean = true) = {
+      forkThread: Boolean = true,
+      sleepTimeMs: Long = 0) = {
 
     new ExperimentStatus(executionsToRun, includeBreakdown, iterations, variations, tags,
-      timeout, resultLocation, sqlContext, allTables, currentConfiguration, forkThread = forkThread)
+      timeout, resultLocation, sqlContext, allTables, currentConfiguration, forkThread = forkThread, sleepTimeMs)
   }
 
 
@@ -296,7 +297,8 @@ object Benchmark {
       sqlContext: SQLContext,
       allTables: Seq[Table],
       currentConfiguration: BenchmarkConfiguration,
-      forkThread: Boolean = true) {
+      forkThread: Boolean = true,
+      sleepTimeMs: Long = 0) {
     val currentResults = new collection.mutable.ArrayBuffer[BenchmarkResult]()
     val currentRuns = new collection.mutable.ArrayBuffer[ExperimentRun]()
     val currentMessages = new collection.mutable.ArrayBuffer[String]()
@@ -394,7 +396,7 @@ object Benchmark {
                 forkThread=forkThread)
             }
 
-            singleResultT match {
+            val result = singleResultT match {
               case Success(singleResult) =>
                 singleResult.failure.foreach { f =>
                   failures += 1
@@ -410,6 +412,9 @@ object Benchmark {
                 logMessage(s"Execution '${q.name}' failed: ${e}")
                 Nil
             }
+            logMessage(s"Sleep $sleepTimeMs ms")
+            Thread.sleep(sleepTimeMs)
+            result
           }
 
           val result = ExperimentRun(

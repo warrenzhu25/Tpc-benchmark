@@ -23,6 +23,7 @@ object TpchBenchmark {
     val databaseName = "tpch"
     val queries = appConf.queries()
     val iterations = appConf.iterations()
+    val sleepTimeMs = appConf.sleepTime()
 
     println(s"AppConf are ${appConf.summary}")
 
@@ -66,7 +67,9 @@ object TpchBenchmark {
       queriesToRun,
       iterations = iterations.toInt,
       resultLocation = resultDir,
-      forkThread = true)
+      forkThread = true,
+      sleepTimeMs = sleepTimeMs
+    )
     experiment.waitForFinish(timeout)
   }
 }

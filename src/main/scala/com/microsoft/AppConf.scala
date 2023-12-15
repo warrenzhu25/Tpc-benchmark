@@ -10,6 +10,7 @@ class AppConf(arguments: Seq[String]) extends ScallopConf(arguments) {
   val queries = opt[String](default = Some(""), descr = "Queries to run separated by comma, such as 'q4,q5'")
   val iterations = opt[Int](default = Some(1), descr = "The number of iterations for each query")
   val cbo = opt[Boolean](default = Some(false), descr = "Enable cbo")
+  val sleepTime = opt[Long](default = Some(0), descr = "Sleep time in ms between each query")
   verify()
 
 }
