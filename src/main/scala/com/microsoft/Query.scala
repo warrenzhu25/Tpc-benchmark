@@ -54,7 +54,7 @@ class Query(
   }
 
   lazy val tablesInvolved = buildDataFrame.queryExecution.logical collect {
-    case UnresolvedRelation(tableIdentifier) => {
+    case UnresolvedRelation(tableIdentifier, _, _) => {
       // We are ignoring the database name.
       tableIdentifier.toString()
     }
@@ -94,7 +94,7 @@ class Query(
             messages += s"Breakdown: ${node.simpleString(100)}"
             val newNode = buildDataFrame.queryExecution.executedPlan.p(index)
             val executionTime = measureTimeMs {
-              newNode.execute().foreach((row: Any) => Unit)
+              newNode.execute().foreach((row: Any) => ())
             }
             timeMap += ((index, executionTime))
 

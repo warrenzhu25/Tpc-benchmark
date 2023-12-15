@@ -211,7 +211,7 @@ abstract class Benchmark(
       new SparkPerfExecution(
         name,
         Map.empty,
-        () => Unit,
+        () => (),
         () => rdd.count(),
         rdd.toDebugString)
     }
@@ -335,7 +335,7 @@ object Benchmark {
         .flatMap { query =>
           try {
             query.newDataFrame().queryExecution.logical.collect {
-              case UnresolvedRelation(t) => t.toString()
+              case UnresolvedRelation(t, _, _) => t.toString()
             }
           } catch {
             // ignore the queries that can't be parsed
@@ -475,20 +475,6 @@ object Benchmark {
     /** Waits for the finish of the experiment. */
     def waitForFinish(timeoutInSeconds: Int) = {
       Await.result(resultsFuture, timeoutInSeconds.seconds)
-    }
-
-    /** Returns results from an actively running experiment. */
-    def getCurrentResults() = {
-      val tbl = sqlContext.createDataFrame(currentResults)
-      tbl.createOrReplaceTempView("currentResults")
-      tbl
-    }
-
-    /** Returns full iterations from an actively running experiment. */
-    def getCurrentRuns() = {
-      val tbl = sqlContext.createDataFrame(currentRuns)
-      tbl.createOrReplaceTempView("currentRuns")
-      tbl
     }
 
     def tail(n: Int = 20) = {

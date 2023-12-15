@@ -12,9 +12,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
-        <scala.version>2.12.10</scala.version>
-        <scala.binary.version>2.12</scala.binary.version>
-        <spark.version>3.0.0</spark.version>
+        <scala.version>2.13.10</scala.version>
+        <scala.binary.version>2.13</scala.binary.version>
+        <spark.version>3.5.0</spark.version>
     </properties>
 
     <dependencies>
@@ -43,7 +43,7 @@
         <dependency>
             <groupId>com.twitter</groupId>
             <artifactId>util-jvm_${scala.binary.version}</artifactId>
-            <version>6.45.0</version>
+            <version>23.11.0</version>
             <scope>provided</scope>
         </dependency>
 
