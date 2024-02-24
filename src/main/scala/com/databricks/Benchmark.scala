@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.microsoft
+package com.databricks
 
-import com.microsoft.cpu._
+import com.databricks.cpu._
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent._

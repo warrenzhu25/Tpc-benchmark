@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.microsoft
+package com.databricks
 
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation

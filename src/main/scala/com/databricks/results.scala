@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.microsoft
+package com.databricks
 
 /**
  * The performance results of all given queries for a single iteration.

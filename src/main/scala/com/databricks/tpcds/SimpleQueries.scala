@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.microsoft.tpcds
+package com.databricks.tpcds
 
-import com.microsoft.Benchmark
-import com.microsoft.ExecutionMode.ForeachResults
+import com.databricks.Benchmark
+import com.databricks.ExecutionMode.ForeachResults
 
 trait SimpleQueries extends Benchmark {
 

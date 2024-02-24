@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.microsoft.tpcds
+package com.databricks.tpcds
 
-import com.microsoft.{Benchmark, Query}
-import com.microsoft.ExecutionMode.CollectResults
+import com.databricks.{Benchmark, Query}
+import com.databricks.ExecutionMode.CollectResults
 
 /**
  * This implements the official TPCDS v1.4 queries with only cosmetic modifications

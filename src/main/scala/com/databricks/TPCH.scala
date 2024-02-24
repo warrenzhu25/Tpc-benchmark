@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.microsoft
+package com.databricks
 
-import com.microsoft.ExecutionMode.CollectResults
+import com.databricks.ExecutionMode.CollectResults
 import org.apache.commons.io.IOUtils
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.microsoft.tpcds
+package com.databricks.tpcds
 
-import com.microsoft.Benchmark
-import com.microsoft.ExecutionMode.CollectResults
+import com.databricks.Benchmark
+import com.databricks.ExecutionMode.CollectResults
 import org.apache.commons.io.IOUtils
 
 import scala.collection.immutable.TreeMap

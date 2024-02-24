@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.microsoft
+package com.databricks
 
 /**
  * Describes how a given Spark benchmark should be run (i.e. should the results be collected to

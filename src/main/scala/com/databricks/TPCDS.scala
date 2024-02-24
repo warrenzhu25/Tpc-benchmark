@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.microsoft
+package com.databricks
 
-import com.microsoft.tpcds.{ImpalaKitQueries, SimpleQueries, Tpcds_1_4_Queries, Tpcds_2_4_Queries}
+import com.databricks.tpcds.{ImpalaKitQueries, SimpleQueries, Tpcds_1_4_Queries, Tpcds_2_4_Queries}
 import org.apache.spark.sql.{SQLContext, SparkSession}
 
 import scala.collection.mutable

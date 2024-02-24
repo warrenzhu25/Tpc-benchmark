@@ -14,31 +14,29 @@
  * limitations under the License.
  */
 
-package com.microsoft.tpcds
+package com.databricks
 
-import com.microsoft.{BlockingLineStream, DataGenerator, Tables}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 
-class DSDGEN(dsdgenDir: String) extends DataGenerator {
-  val dsdgen = s"$dsdgenDir/dsdgen"
+class DSDGEN(javaDir: String, dsdgenDir: String) extends DataGenerator {
 
   def generate(sparkContext: SparkContext, name: String, partitions: Int, scaleFactor: String) = {
     val generatedData = {
       sparkContext.parallelize(1 to partitions, partitions).flatMap { i =>
-        val localToolsDir = if (new java.io.File(dsdgen).exists) {
-          dsdgenDir
-        } else if (new java.io.File(s"/$dsdgen").exists) {
-          s"/$dsdgenDir"
-        } else {
-          sys.error(s"Could not find dsdgen at $dsdgen or /$dsdgen. Run install")
-        }
+        val javaHome = getJavaHome()
+        //TODO: This only supports on windows
+        val javaPath = s"""$javaHome\\bin\\java"""
 
-        // Note: RNGSEED is the RNG seed used by the data generator. Right now, it is fixed to 100.
-        val parallel = if (partitions > 1) s"-parallel $partitions -child $i" else ""
-        val commands = Seq(
-          "bash", "-c",
-          s"cd $localToolsDir && ./dsdgen -table $name -filter Y -scale $scaleFactor -RNGSEED 100 $parallel")
+        val commands = Seq(javaPath,
+           "-Xmx1024m",
+           "-jar",
+           dsdgenDir,
+           "--filter",
+           "-s", scaleFactor,
+           "-t", name,
+           "-p", partitions.toString,
+           "-c", i.toString)
         println(commands)
         BlockingLineStream(commands)
       }
@@ -47,19 +45,33 @@ class DSDGEN(dsdgenDir: String) extends DataGenerator {
     generatedData.setName(s"$name, sf=$scaleFactor, strings")
     generatedData
   }
-}
 
+  def getJavaHome(): String = {
+    if(!javaDir.isEmpty && new java.io.File(javaDir).exists) {
+      javaDir
+    } else {
+      val javaHome = sys.env.get("JAVA_HOME")
+      println(s"JAVA_HOME is $javaHome")
+      if(javaHome.isDefined) {
+        javaHome.get
+      } else {
+        sys.error(s"Could not find JAVA_HOME and javaHomeDir")
+      }
+    }
+  }
+}
 
 class TPCDSTables(
   sqlContext: SQLContext,
-  dsdgenDir: String,
   scaleFactor: String,
+  javaDir: String = "",
+  dsdgenDir: String = "tpcds.jar",
   useDoubleForDecimal: Boolean = false,
   useStringForDate: Boolean = false)
   extends Tables(sqlContext, scaleFactor, useDoubleForDecimal, useStringForDate) {
   import sqlContext.implicits._
 
-  val dataGenerator = new DSDGEN(dsdgenDir)
+  val dataGenerator = new DSDGEN(javaDir, dsdgenDir)
   val tables = Seq(
     Table("catalog_sales",
       partitionColumns = "cs_sold_date_sk" :: Nil,

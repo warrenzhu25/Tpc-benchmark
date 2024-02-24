@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.microsoft.tpcds
+package com.databricks.tpcds
 
-import com.microsoft.{Benchmark, Query}
+import com.databricks.{Benchmark, Query}
 import org.apache.spark.sql.{SQLContext, SparkSession}
 
 import scala.collection.mutable

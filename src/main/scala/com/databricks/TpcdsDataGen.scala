@@ -1,4 +1,4 @@
-package com.microsoft
+package com.databricks
 
 import org.apache.spark.sql.{SQLContext, SparkSession}
 
