@@ -47,7 +47,8 @@ abstract class Benchmark(
       "spark.sql.perf.results",
       "/spark/sql/performance")
 
-  protected def sparkContext = sqlContext.sparkContext
+  protected lazy val sparkSession: SparkSession = sqlContext.sparkSession
+  private def sparkContextOption = Try(sparkSession.sparkContext).toOption
 
   protected implicit def toOption[A](a: A): Option[A] = Option(a)
 
@@ -61,8 +62,8 @@ abstract class Benchmark(
 
   def currentConfiguration = BenchmarkConfiguration(
     sqlConf = sqlContext.getAllConfs,
-    sparkConf = sparkContext.getConf.getAll.toMap,
-    defaultParallelism = sparkContext.defaultParallelism,
+    sparkConf = sparkContextOption.map(_.getConf.getAll.toMap).getOrElse(Map.empty),
+    defaultParallelism = sparkContextOption.map(_.defaultParallelism).getOrElse(0),
     buildInfo = buildInfo)
 
 

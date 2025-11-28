@@ -20,6 +20,7 @@ import com.microsoft.tpcds.{ImpalaKitQueries, SimpleQueries, Tpcds_1_4_Queries, 
 import org.apache.spark.sql.{SQLContext, SparkSession}
 
 import scala.collection.mutable
+import scala.util.Try
 
 /**
  * TPC-DS benchmark's dataset.
@@ -78,6 +79,8 @@ class TPCDS(@transient sqlContext: SQLContext)
 
   def run(queries: Seq[Query], numRows: Int = 1, timeout: Int = 0): Unit = {
     val succeeded = mutable.ArrayBuffer.empty[String]
+    def withSparkContext(f: org.apache.spark.SparkContext => Unit): Unit =
+      Try(sqlContext.sparkContext).toOption.foreach(sc => Try(f(sc)))
     queries.foreach { q =>
       println(s"Query: ${q.name}")
       val start = System.currentTimeMillis()
@@ -87,7 +90,7 @@ class TPCDS(@transient sqlContext: SQLContext)
       val t = new Thread("query runner") {
         override def run(): Unit = {
           try {
-            sqlContext.sparkContext.setJobGroup(jobgroup, jobgroup, true)
+            withSparkContext(_.setJobGroup(jobgroup, jobgroup, true))
             df.show(numRows)
           } catch {
             case e: Exception =>
@@ -101,7 +104,7 @@ class TPCDS(@transient sqlContext: SQLContext)
       t.join(timeout)
       if (t.isAlive) {
         println(s"Timeout after $timeout seconds")
-        sqlContext.sparkContext.cancelJobGroup(jobgroup)
+        withSparkContext(_.cancelJobGroup(jobgroup))
         t.interrupt()
       } else {
         if (!failed) {
@@ -115,6 +118,5 @@ class TPCDS(@transient sqlContext: SQLContext)
     println(succeeded.map("\"" + _ + "\""))
   }
 }
-
 
 

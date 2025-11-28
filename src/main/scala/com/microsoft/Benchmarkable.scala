@@ -18,20 +18,19 @@ package com.microsoft
 
 import java.util.UUID
 
-import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
+import scala.util.Try
 
 
 /** A trait to describe things that can be benchmarked. */
 trait Benchmarkable {
   @transient protected[this] val sqlSession = SparkSession.builder.getOrCreate()
   @transient protected[this] val sqlContext = sqlSession.sqlContext
-  @transient protected[this] val sparkContext = sqlSession.sparkContext
 
   val name: String
   protected val executionMode: ExecutionMode
@@ -44,21 +43,25 @@ trait Benchmarkable {
       timeout: Long,
       forkThread: Boolean = true): BenchmarkResult = {
     logger.info(s"$this: benchmark")
-    sparkContext.setJobDescription(s"Execution: $name, $description")
+    withSparkContext(_.setJobDescription(s"Execution: $name, $description"))
     beforeBenchmark()
     val result = if (forkThread) {
       runBenchmarkForked(includeBreakdown, description, messages, timeout)
     } else {
       doBenchmark(includeBreakdown, description, messages)
     }
-    afterBenchmark(sqlContext.sparkContext)
+    afterBenchmark()
     result
   }
 
   protected def beforeBenchmark(): Unit = { }
 
-  protected def afterBenchmark(sc: SparkContext): Unit = {
+  protected def afterBenchmark(): Unit = {
     System.gc()
+  }
+
+  protected def withSparkContext(f: org.apache.spark.SparkContext => Unit): Unit = {
+    Try(sqlSession.sparkContext).toOption.foreach(sc => Try(f(sc)))
   }
 
   private def runBenchmarkForked(
@@ -72,7 +75,7 @@ trait Benchmarkable {
     val thread = new Thread("benchmark runner") {
       override def run(): Unit = {
         logger.info(s"$that running $this")
-        sparkContext.setJobGroup(jobgroup, s"benchmark $name", true)
+        withSparkContext(_.setJobGroup(jobgroup, s"benchmark $name", true))
         try {
           result = doBenchmark(includeBreakdown, description, messages)
         } catch {
@@ -92,7 +95,7 @@ trait Benchmarkable {
     thread.start()
     thread.join(timeout)
     if (thread.isAlive) {
-      sparkContext.cancelJobGroup(jobgroup)
+      withSparkContext(_.cancelJobGroup(jobgroup))
       thread.interrupt()
       result = BenchmarkResult(
         name = name,

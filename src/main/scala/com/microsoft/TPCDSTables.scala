@@ -16,34 +16,36 @@
 
 package com.microsoft
 
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{Encoders, SQLContext, SparkSession}
 
 class DSDGEN(javaDir: String, dsdgenDir: String) extends DataGenerator {
 
-  def generate(sparkContext: SparkContext, name: String, partitions: Int, scaleFactor: String) = {
+  def generate(spark: SparkSession, name: String, partitions: Int, scaleFactor: String) = {
+    import spark.implicits._
+    val numPartitions = math.max(partitions, 1)
     val generatedData = {
-      sparkContext.parallelize(1 to partitions, partitions).flatMap { i =>
-        val javaHome = getJavaHome()
-        //TODO: This only supports on windows
-        val javaPath = s"""$javaHome\\bin\\java"""
+      spark.range(1, numPartitions.toLong + 1, 1, numPartitions).mapPartitions { iter =>
+        iter.map(_.toInt).flatMap { i =>
+          val javaHome = getJavaHome()
+          //TODO: This only supports on windows
+          val javaPath = s"""$javaHome\\bin\\java"""
 
-        val commands = Seq(javaPath,
-           "-Xmx1024m",
-           "-jar",
-           dsdgenDir,
-           "--filter",
-           "-s", scaleFactor,
-           "-t", name,
-           "-p", partitions.toString,
-           "-c", i.toString)
-        println(commands)
-        BlockingLineStream(commands)
-      }
+          val commands = Seq(javaPath,
+             "-Xmx1024m",
+             "-jar",
+             dsdgenDir,
+             "--filter",
+             "-s", scaleFactor,
+             "-t", name,
+             "-p", numPartitions.toString,
+             "-c", i.toString)
+          println(commands)
+          BlockingLineStream(commands)
+        }
+      }(Encoders.STRING)
     }
 
-    generatedData.setName(s"$name, sf=$scaleFactor, strings")
-    generatedData
+    generatedData.toDF("value").as[String]
   }
 
   def getJavaHome(): String = {

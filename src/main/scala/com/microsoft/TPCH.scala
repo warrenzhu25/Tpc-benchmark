@@ -18,45 +18,46 @@ package com.microsoft
 
 import com.microsoft.ExecutionMode.CollectResults
 import org.apache.commons.io.IOUtils
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{Encoders, SQLContext, SparkSession}
 
 class DBGEN(dbgenDir: String, params: Seq[String]) extends DataGenerator {
   val dbgen = s"$dbgenDir/dbgen"
-  def generate(sparkContext: SparkContext,name: String, partitions: Int, scaleFactor: String) = {
+  def generate(spark: SparkSession, name: String, partitions: Int, scaleFactor: String) = {
+    import spark.implicits._
     val smallTables = Seq("nation", "region")
     val numPartitions = if (partitions > 1 && !smallTables.contains(name)) partitions else 1
     val generatedData = {
-      sparkContext.parallelize(1 to numPartitions, numPartitions).flatMap { i =>
-        val localToolsDir = if (new java.io.File(dbgen).exists) {
-          dbgenDir
-        } else if (new java.io.File(s"/$dbgenDir").exists) {
-          s"/$dbgenDir"
-        } else {
-          sys.error(s"Could not find dbgen at $dbgen or /$dbgenDir. Run install")
+      spark.range(1, numPartitions.toLong + 1, 1, numPartitions).mapPartitions { iter =>
+        iter.map(_.toInt).flatMap { i =>
+          val localToolsDir = if (new java.io.File(dbgen).exists) {
+            dbgenDir
+          } else if (new java.io.File(s"/$dbgenDir").exists) {
+            s"/$dbgenDir"
+          } else {
+            sys.error(s"Could not find dbgen at $dbgen or /$dbgenDir. Run install")
+          }
+          val parallel = if (numPartitions > 1) s"-C $partitions -S $i" else ""
+          val shortTableNames = Map(
+            "customer" -> "c",
+            "lineitem" -> "L",
+            "nation" -> "n",
+            "orders" -> "O",
+            "part" -> "P",
+            "region" -> "r",
+            "supplier" -> "s",
+            "partsupp" -> "S"
+          )
+          val paramsString = params.mkString(" ")
+          val commands = Seq(
+            "bash", "-c",
+            s"cd $localToolsDir && ./dbgen -q $paramsString -T ${shortTableNames(name)} -s $scaleFactor $parallel")
+          println(commands)
+          BlockingLineStream(commands)
         }
-        val parallel = if (numPartitions > 1) s"-C $partitions -S $i" else ""
-        val shortTableNames = Map(
-          "customer" -> "c",
-          "lineitem" -> "L",
-          "nation" -> "n",
-          "orders" -> "O",
-          "part" -> "P",
-          "region" -> "r",
-          "supplier" -> "s",
-          "partsupp" -> "S"
-        )
-        val paramsString = params.mkString(" ")
-        val commands = Seq(
-          "bash", "-c",
-          s"cd $localToolsDir && ./dbgen -q $paramsString -T ${shortTableNames(name)} -s $scaleFactor $parallel")
-        println(commands)
-        BlockingLineStream(commands)
-      }.repartition(numPartitions)
+      }(Encoders.STRING).repartition(numPartitions)
     }
 
-    generatedData.setName(s"$name, sf=$scaleFactor, strings")
-    generatedData
+    generatedData.toDF("value").as[String]
   }
 }
 

@@ -22,7 +22,7 @@ object TpcdsDataGen {
     val partitions = args(2)
     val table = if (args.length > 3) args(3) else ""
     val overwrite = if(args.length > 4) args(4).toBoolean else false
-    val sqlContext = new SQLContext(spark.sparkContext)
+    val sqlContext = spark.sqlContext
     // Run:
     val tables = new TPCDSTables(sqlContext,
       scaleFactor = scaleFactor,

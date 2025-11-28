@@ -25,6 +25,7 @@ import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
 import scala.language.reflectiveCalls
 import scala.sys.process._
+import scala.util.Try
 
 /**
  * A collection of utilities for parsing stacktraces that have been recorded in JSON and generating visualizations
@@ -53,7 +54,7 @@ package object cpu {
 
   def collectLogs(sqlContext: SQLContext, fs: FS, timestamp: Long): String = {
 
-    def sc = sqlContext.sparkContext
+    val sparkContextOption = Try(sqlContext.sparkContext).toOption
 
     def copyLogFiles() = {
       val path = "pwd".!!.trim
@@ -67,7 +68,12 @@ package object cpu {
     fs.rm(getCpuLocation(timestamp), true)
 
     copyLogFiles()
-    sc.parallelize((1 to 100)).foreach { i => copyLogFiles() }
+    sparkContextOption match {
+      case Some(sc) =>
+        sc.parallelize((1 to 100)).foreach { _ => copyLogFiles() }
+      case None =>
+        println("SparkContext not available; copying logs once.")
+    }
     getCpuLocation(timestamp)
   }
 

@@ -23,11 +23,9 @@ import scala.sys.process._
 
 import org.slf4j.LoggerFactory
 
-import org.apache.spark.SparkContext
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Row, SQLContext, SaveMode}
+import org.apache.spark.sql.{Dataset, Row, SQLContext, SaveMode, SparkSession, Encoders}
 
 /**
  * Using ProcessBuilder.lineStream produces a stream, that uses
@@ -86,10 +84,10 @@ object BlockingLineStream {
 
 trait DataGenerator extends Serializable {
   def generate(
-    sparkContext: SparkContext,
+    spark: SparkSession,
     name: String,
     partitions: Int,
-    scaleFactor: String): RDD[String]
+    scaleFactor: String): Dataset[String]
 }
 
 
@@ -101,8 +99,6 @@ abstract class Tables(sqlContext: SQLContext, scaleFactor: String,
   def tables: Seq[Table]
 
   private val log = LoggerFactory.getLogger(getClass)
-
-  def sparkContext = sqlContext.sparkContext
 
   case class Table(name: String, partitionColumns: Seq[String], fields: StructField*) {
     val schema = StructType(fields)
@@ -116,41 +112,21 @@ abstract class Tables(sqlContext: SQLContext, scaleFactor: String,
      *  converted to `schema`. Otherwise, it just outputs the raw data (as a single STRING column).
      */
     def df(convertToSchema: Boolean, numPartition: Int) = {
-      val generatedData = dataGenerator.generate(sparkContext, name, numPartition, scaleFactor)
-      val rows = generatedData.mapPartitions { iter =>
-        iter.map { l =>
-          if (convertToSchema) {
-            val values = l.split("\\|", -1).dropRight(1).map { v =>
-              if (v.equals("")) {
-                // If the string value is an empty string, we turn it to a null
-                null
-              } else {
-                v
-              }
-            }
-            Row.fromSeq(values)
-          } else {
-            Row.fromSeq(Seq(l))
-          }
-        }
-      }
-
+      val generatedData = dataGenerator.generate(sqlContext.sparkSession, name, numPartition, scaleFactor)
       if (convertToSchema) {
-        val stringData =
-          sqlContext.createDataFrame(
-            rows,
-            StructType(schema.fields.map(f => StructField(f.name, StringType))))
+        val splitData = generatedData.map { l =>
+          l.split("\\|", -1).dropRight(1).map { v =>
+            if (v.equals("")) null else v
+          }.toSeq
+        }(Encoders.kryo[Seq[String]])
 
-        val convertedData = {
-          val columns = schema.fields.map { f =>
-            col(f.name).cast(f.dataType).as(f.name)
-          }
-          stringData.select(columns: _*)
+        val stringData = splitData.toDF("cols")
+        val columns = schema.fields.zipWithIndex.map { case (f, idx) =>
+          col("cols").getItem(idx).cast(f.dataType).as(f.name)
         }
-
-        convertedData
+        stringData.select(columns: _*)
       } else {
-        sqlContext.createDataFrame(rows, StructType(Seq(StructField("value", StringType))))
+        generatedData.toDF("value")
       }
     }
 

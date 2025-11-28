@@ -31,7 +31,7 @@ object TpchBenchmark {
       .builder
       .getOrCreate()
 
-    val sqlContext = new SQLContext(spark.sparkContext)
+    val sqlContext = spark.sqlContext
 
     val tpch = new TPCH(sqlContext = sqlContext)
     val excludes = appConf.exclude().split(",").toSet

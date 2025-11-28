@@ -1,0 +1,3 @@
+- Remove direct dependencies on `SparkContext` to enable Spark Connect compatibility while preserving existing behavior when `SparkContext` is available.
+- Update data generation to operate through `SparkSession`/Dataset APIs instead of RDD APIs.
+- Guard job-group/description usage and ancillary utilities so they no-op gracefully when `SparkContext` is unavailable.

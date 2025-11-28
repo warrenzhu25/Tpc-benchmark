@@ -30,7 +30,7 @@ object TpcdsBenchmark {
       .builder
       .getOrCreate()
 
-    val sqlContext = new SQLContext(spark.sparkContext)
+    val sqlContext = spark.sqlContext
 
     val tpcds = new TPCDS(sqlContext = sqlContext)
     val excludes = appConf.exclude().split(",").toSet
